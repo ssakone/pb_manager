@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PB Manager{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex justify-between items-end border-b-2 border-black pb-4">
+        <div>
+            <h1 class="text-4xl font-bold tracking-tighter">INSTANCES</h1>
+            <p class="text-gray-600 mt-1 font-mono text-sm uppercase tracking-wider">Manage your PocketBase instances</p>
+        </div>
+        <button onclick="openCreateModal()" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            NEW INSTANCE
+        </button>
+    </div>
+
+    <!-- Instances Grid -->
+    <div id="instancesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% if instances %}
+            {% for instance in instances %}
+            <div class="card relative group hover:bg-gray-50 transition-colors duration-200" id="instance-card-{{ instance.id }}">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold">{{ instance.name }}</h3>
+                        <p class="text-sm font-mono mt-1">v{{ instance.version }}</p>
+                    </div>
+                    <span class="status-badge status-{{ instance.pm2_status }}">
+                        {{ instance.pm2_status }}
+                    </span>
+                </div>
+
+                <!-- Info -->
+                <div class="space-y-3 mb-6 font-mono text-sm border-t-2 border-b-2 border-black py-4">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">{% if instance.domain %}URL{% else %}PORT{% endif %}</span>
+                        <a href="{% if instance.domain %}https://{{ instance.domain }}{% else %}http://localhost:{{ instance.port }}{% endif %}" target="_blank" class="hover:underline decoration-2 underline-offset-2 flex items-center gap-1">
+                            {% if instance.domain %}{{ instance.domain }}{% else %}localhost:{{ instance.port }}{% endif %} <i class="fas fa-external-link-alt text-xs"></i>
+                        </a>
+                    </div>
+                    {% if instance.pid %}
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">PID</span>
+                        <span>{{ instance.pid }}</span>
+                    </div>
+                    {% endif %}
+                    {% if instance.pm2_status == 'online' %}
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">ADMIN</span>
+                        <a href="{% if instance.domain %}https://{{ instance.domain }}{% else %}http://localhost:{{ instance.port }}{% endif %}/_/" target="_blank" class="hover:underline decoration-2 underline-offset-2">
+                            OPEN DASHBOARD
+                        </a>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">DEV MODE</span>
+                        <span class="{% if instance.dev_mode %}font-bold bg-black text-white px-1{% endif %}">
+                            {% if instance.dev_mode %}ON{% else %}OFF{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold">DOMAIN</span>
+                        <button onclick="changeDomain({{ instance.id }})" class="text-xs hover:underline decoration-2 underline-offset-2">
+                            {% if instance.domain %}{{ instance.domain }}{% else %}None{% endif %} <i class="fas fa-edit ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="grid grid-cols-3 gap-2 mb-2">
+                    {% if instance.pm2_status == 'stopped' %}
+                    <button onclick="startInstance({{ instance.id }})" 
+                            class="btn btn-secondary text-xs" title="Start">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    {% else %}
+                    <button class="btn btn-secondary text-xs opacity-50 cursor-not-allowed" disabled title="Start">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    {% endif %}
+                    
+                    {% if instance.pm2_status == 'online' %}
+                    <button onclick="stopInstance({{ instance.id }})" 
+                            class="btn btn-secondary text-xs" title="Stop">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                    {% else %}
+                    <button class="btn btn-secondary text-xs opacity-50 cursor-not-allowed" disabled title="Stop">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                    {% endif %}
+                    
+                    {% if instance.pm2_status == 'online' %}
+                    <button onclick="restartInstance({{ instance.id }})" 
+                            class="btn btn-secondary text-xs" title="Restart">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    {% else %}
+                    <button class="btn btn-secondary text-xs opacity-50 cursor-not-allowed" disabled title="Restart">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 mb-2">
+                    <button onclick="toggleDevMode({{ instance.id }})" 
+                            class="btn btn-secondary text-xs w-full {% if instance.dev_mode %}bg-gray-100{% endif %} {% if instance.pm2_status != 'stopped' %}opacity-50 cursor-not-allowed{% endif %}"
+                            {% if instance.pm2_status != 'stopped' %}disabled{% endif %}>
+                        <i class="fas fa-bug mr-1"></i> DEV
+                    </button>
+                    <button onclick="viewLogs({{ instance.id }})" 
+                            class="btn btn-secondary text-xs w-full">
+                        <i class="fas fa-file-alt mr-1"></i> LOGS
+                    </button>
+                    <button onclick="openVersionManager({{ instance.id }}, '{{ instance.name }}', '{{ instance.version }}')" 
+                            class="btn btn-secondary text-xs w-full {% if instance.pm2_status != 'stopped' %}opacity-50 cursor-not-allowed{% endif %}"
+                            {% if instance.pm2_status != 'stopped' %}disabled{% endif %}>
+                        <i class="fas fa-code-branch mr-1"></i> VER
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="openFileManager({{ instance.id }})" 
+                            class="btn btn-secondary text-xs w-full">
+                        <i class="fas fa-folder mr-1"></i> FILES
+                    </button>
+                    <button onclick="openAdminManager({{ instance.id }})" 
+                            class="btn btn-secondary text-xs w-full">
+                        <i class="fas fa-user-shield mr-1"></i> ADMIN
+                    </button>
+                </div>
+                
+                <div class="mt-2">
+                     <button onclick="deleteInstance({{ instance.id }})" 
+                            class="btn btn-danger text-xs w-full {% if instance.pm2_status != 'stopped' %}opacity-50 cursor-not-allowed{% endif %}"
+                            {% if instance.pm2_status != 'stopped' %}disabled{% endif %}>
+                        <i class="fas fa-trash mr-1"></i> DELETE
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-span-full card p-12 text-center border-dashed">
+                <i class="fas fa-cube text-6xl mb-6"></i>
+                <h3 class="text-2xl font-bold mb-2">NO INSTANCES</h3>
+                <p class="text-gray-600 mb-6 font-mono">Create your first PocketBase instance to get started</p>
+                <button onclick="openCreateModal()" class="btn btn-primary inline-flex">
+                    <i class="fas fa-plus mr-2"></i>
+                    CREATE INSTANCE
+                </button>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create Instance Modal -->
+<div id="createModal" class="hidden fixed inset-0 bg-white/90 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative p-8 border-2 border-black bg-white w-full max-w-md shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold uppercase">New Instance</h3>
+            <button onclick="closeCreateModal()" class="hover:bg-black hover:text-white p-1 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="createForm" class="space-y-6">
+            <div>
+                <label class="block text-sm font-bold uppercase mb-2">Instance Name</label>
+                <input type="text" name="name" required class="input-field" placeholder="my-pocketbase-app">
+            </div>
+            <div>
+                <label class="block text-sm font-bold uppercase mb-2">Version</label>
+                <select name="version" required class="input-field bg-white">
+                    <option value="">Select version...</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-bold uppercase mb-2">Domain (Optional)</label>
+                <input type="text" name="domain" class="input-field" placeholder="example.com">
+                <p class="text-xs text-gray-600 mt-1 font-mono">Laissez vide pour utiliser localhost:port</p>
+            </div>
+            
+            <!-- Admin Credentials -->
+            <div class="border-t-2 border-b-2 border-black py-4 space-y-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fas fa-user-shield text-lg"></i>
+                    <span class="font-bold uppercase text-sm">Admin User (Optional)</span>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold uppercase mb-2">Admin Email</label>
+                    <input type="email" name="admin_email" class="input-field" placeholder="admin@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold uppercase mb-2">Admin Password</label>
+                    <input type="password" name="admin_password" class="input-field" placeholder="Enter password">
+                    <p class="text-xs text-gray-600 mt-1 font-mono">If provided, an admin user will be created automatically</p>
+                </div>
+            </div>
+            
+            <div>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" name="dev_mode" class="w-5 h-5 border-2 border-black rounded-none text-black focus:ring-0 cursor-pointer">
+                    <span class="font-bold uppercase text-sm group-hover:underline">Enable Dev Mode</span>
+                </label>
+            </div>
+            <div class="flex gap-4 pt-2">
+                <button type="submit" class="btn btn-primary flex-1">
+                    CREATE
+                </button>
+                <button type="button" onclick="closeCreateModal()" class="btn btn-secondary flex-1">
+                    CANCEL
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Logs Modal -->
+<div id="logsModal" class="hidden fixed inset-0 bg-white/90 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative w-full max-w-5xl p-6 h-[80vh] flex flex-col">
+        <div class="bg-white border-2 border-black p-6 h-full flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold uppercase flex items-center gap-2">
+                    <i class="fas fa-terminal"></i> Instance Logs
+                </h3>
+                <div class="flex gap-2">
+                    <button onclick="refreshLogs()" class="btn btn-secondary text-xs">
+                        <i class="fas fa-sync-alt"></i> REFRESH
+                    </button>
+                    <button onclick="closeLogsModal()" class="btn btn-secondary text-xs">
+                        <i class="fas fa-times"></i> CLOSE
+                    </button>
+                </div>
+            </div>
+            <pre id="logsContent" class="flex-1 bg-black text-white p-4 font-mono text-sm overflow-auto border-2 border-black"></pre>
+        </div>
+    </div>
+</div>
+
+<!-- Version Manager Modal -->
+<div id="versionManagerModal" class="hidden fixed inset-0 bg-white/90 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative w-full max-w-3xl p-6 h-[80vh] flex flex-col">
+        <div class="bg-white border-2 border-black h-full flex flex-col">
+            <!-- Header -->
+            <div class="border-b-2 border-black p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 id="versionModalTitle" class="text-xl font-bold uppercase flex items-center gap-2">
+                        <i class="fas fa-code-branch"></i> Changer Version
+                    </h3>
+                    <button onclick="closeVersionManager()" class="btn btn-secondary text-xs">
+                        <i class="fas fa-times"></i> FERMER
+                    </button>
+                </div>
+                <div class="text-sm font-mono">
+                    Version actuelle: <span id="versionCurrent" class="font-bold bg-gray-100 px-2 py-1"></span>
+                </div>
+            </div>
+            
+            <!-- Version List -->
+            <div class="flex-1 overflow-auto p-4">
+                <div class="mb-3 text-sm text-gray-600 font-mono">
+                    <i class="fas fa-info-circle mr-1"></i> 
+                    L'instance doit être arrêtée pour changer de version
+                </div>
+                <div id="versionList" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Manager Modal -->
+<div id="adminManagerModal" class="hidden fixed inset-0 bg-white/90 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative w-full max-w-4xl p-6 h-[80vh] flex flex-col">
+        <div class="bg-white border-2 border-black h-full flex flex-col">
+            <!-- Header -->
+            <div class="border-b-2 border-black p-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold uppercase flex items-center gap-2">
+                        <i class="fas fa-user-shield"></i> Admin Management
+                    </h3>
+                    <div class="flex gap-2">
+                        <button onclick="refreshAdmins()" class="btn btn-secondary text-xs">
+                            <i class="fas fa-sync-alt"></i> REFRESH
+                        </button>
+                        <button onclick="closeAdminManager()" class="btn btn-secondary text-xs">
+                            <i class="fas fa-times"></i> CLOSE
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin List -->
+            <div class="flex-1 overflow-auto p-4">
+                <div id="adminList" class="space-y-3 mb-6"></div>
+                
+                <!-- Add Admin Form -->
+                <div id="addAdminForm" class="hidden border-2 border-black p-4 bg-gray-50">
+                    <h4 class="font-bold uppercase mb-4 flex items-center gap-2">
+                        <i class="fas fa-user-plus"></i> Add New Admin
+                    </h4>
+                    <form onsubmit="addAdmin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold uppercase mb-2">Email</label>
+                            <input type="email" id="newAdminEmail" required class="input-field" placeholder="admin@example.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold uppercase mb-2">Password</label>
+                            <input type="password" id="newAdminPassword" required class="input-field" placeholder="Enter secure password">
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-1">
+                                <i class="fas fa-plus mr-1"></i> ADD ADMIN
+                            </button>
+                            <button type="button" onclick="closeAddAdminDialog()" class="btn btn-secondary flex-1">
+                                CANCEL
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Add Admin Button -->
+                <button onclick="openAddAdminDialog()" class="btn btn-primary w-full">
+                    <i class="fas fa-user-plus mr-2"></i> ADD NEW ADMIN
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- File Manager Modal -->
+<div id="fileManagerModal" class="hidden fixed inset-0 bg-white/90 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative w-full max-w-7xl p-6 h-[90vh] flex flex-col">
+        <div class="bg-white border-2 border-black h-full flex flex-col">
+            <!-- Header -->
+            <div class="border-b-2 border-black p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xl font-bold uppercase flex items-center gap-2">
+                        <i class="fas fa-folder-open"></i> File Manager
+                    </h3>
+                    <button onclick="closeFileManager()" class="btn btn-secondary text-xs">
+                        <i class="fas fa-times"></i> CLOSE
+                    </button>
+                </div>
+                
+                <!-- Breadcrumb -->
+                <div id="breadcrumb" class="flex items-center gap-1 text-sm font-mono bg-gray-100 p-2 border-2 border-black"></div>
+            </div>
+            
+            <!-- Toolbar -->
+            <div class="border-b-2 border-black p-3 flex gap-2 flex-wrap">
+                <button onclick="openUploadDialog()" class="btn btn-primary text-xs">
+                    <i class="fas fa-upload mr-1"></i> UPLOAD
+                </button>
+                <button onclick="openNewFolderDialog()" class="btn btn-secondary text-xs">
+                    <i class="fas fa-folder-plus mr-1"></i> NEW FOLDER
+                </button>
+                <button onclick="refreshFiles()" class="btn btn-secondary text-xs">
+                    <i class="fas fa-sync-alt mr-1"></i> REFRESH
+                </button>
+                <button id="deleteSelectedBtn" onclick="deleteSelected()" class="btn btn-danger text-xs ml-auto" disabled>
+                    <i class="fas fa-trash mr-1"></i> DELETE
+                </button>
+                <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileUpload(event)">
+            </div>
+            
+            <!-- File List -->
+            <div id="fileManagerContent" class="flex-1 overflow-auto p-4 relative">
+                <div id="fileList" class="space-y-1"></div>
+                
+                <!-- Drop Zone Overlay -->
+                <div class="drop-zone-overlay absolute inset-0 bg-blue-500 bg-opacity-20 border-4 border-dashed border-blue-600 items-center justify-center pointer-events-none opacity-0 transition-opacity">
+                    <div class="text-2xl font-bold text-blue-600 text-center">
+                        <i class="fas fa-cloud-upload-alt text-6xl mb-4 block"></i>
+                        <p>DROP FILES HERE</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/file-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/version-manager.js') }}"></script>
+{% endblock %}

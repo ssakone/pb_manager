@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Login - PB Manager{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center px-4 py-8 w-full">
+    <div class="w-full sm:min-w-[400px] lg:w-[500px] bg-white py-10 px-8 md:px-12">
+        <div class="text-center mb-12">
+            <h2 class="text-4xl font-bold uppercase tracking-tighter">
+                PB MANAGER
+            </h2>
+            <p class="mt-4 text-gray-600 font-mono text-xs md:text-sm uppercase tracking-wider">
+                Authentication Required
+            </p>
+        </div>
+        
+        <form class="space-y-10" method="POST" action="{{ url_for('auth.login') }}">
+            <div class="space-y-7">
+                <div>
+                    <label for="username" class="block text-sm font-bold uppercase mb-2">Username</label>
+                    <input id="username" 
+                           name="username" 
+                           type="text" 
+                           required 
+                           class="input-field" 
+                           placeholder="Enter username">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-bold uppercase mb-2">Password</label>
+                    <input id="password" 
+                           name="password" 
+                           type="password" 
+                           required 
+                           class="input-field" 
+                           placeholder="Enter password">
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="btn btn-primary w-full py-3">
+                    SIGN IN
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

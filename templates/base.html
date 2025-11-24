@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PocketBase Manager{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style type="text/tailwindcss">
+        :root {
+            --border-width: 2px;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        /* Minimalist Black & White Theme */
+        .btn {
+            @apply px-4 py-2 font-medium transition-all duration-200 border border-gray-400 flex items-center justify-center;
+        }
+        
+        .btn-primary {
+            @apply bg-black text-white border-black hover:bg-white hover:text-black;
+        }
+        
+        .btn-secondary {
+            @apply bg-white text-black border-gray-300 hover:bg-black hover:text-white hover:border-black;
+        }
+        
+        .btn-danger {
+            @apply border-gray-400 text-black hover:bg-black hover:text-white hover:border-black;
+        }
+        
+        .card {
+            @apply bg-white border-2 border-black p-6;
+        }
+        
+        .input-field {
+            @apply w-full px-3 py-2 border-2 border-black focus:outline-none focus:ring-0 rounded-none transition-colors bg-white appearance-none;
+        }
+
+        .input-field:hover {
+            @apply bg-gray-100;
+        }
+
+        .input-field:focus {
+            @apply bg-black text-white placeholder-gray-500;
+        }
+
+        /* Custom Select Chevron */
+        select.input-field {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+
+        select.input-field:hover {
+            cursor: pointer;
+        }
+
+        select.input-field:focus {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        }
+
+        /* Status Indicators */
+        .status-badge {
+            @apply px-2 py-1 text-xs font-bold border uppercase tracking-wider;
+        }
+        
+        .status-online { @apply bg-green-600 text-white border-green-600; }
+        .status-stopped { @apply bg-red-600 text-white border-red-600; }
+        .status-errored { @apply bg-red-600 text-white border-red-600; }
+        .status-unknown { @apply bg-gray-200 text-black border-gray-300; }
+        
+        /* File Manager Styles */
+        .file-item {
+            @apply flex items-center justify-between p-3 border-2 border-black hover:bg-gray-50 transition-colors cursor-pointer;
+        }
+        
+        .file-item.selected {
+            @apply bg-black text-white;
+        }
+        
+        .file-item.selected i {
+            @apply text-white;
+        }
+        
+        .file-item.directory {
+            @apply font-bold;
+        }
+        
+        .btn-icon {
+            @apply p-2 hover:bg-black hover:text-white border-2 border-black transition-colors;
+        }
+        
+        .breadcrumb-item {
+            @apply px-2 py-1 hover:bg-black hover:text-white transition-colors font-mono;
+        }
+        
+        #fileManagerContent.drag-over .drop-zone-overlay {
+            @apply opacity-100 flex;
+        }
+        
+        #fileManagerContent.drag-over {
+            @apply border-4 border-blue-600 border-dashed;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-white min-h-screen text-black flex flex-col">
+    <!-- Navigation -->
+    <nav class="border-b-2 border-black bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold tracking-tight uppercase border-2 border-black px-2 py-1">PB Manager</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if current_user.is_authenticated %}
+                        <span class="text-sm font-medium">
+                            {{ current_user.username }}
+                        </span>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary text-sm h-8">
+                            Logout
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 border-2 border-black font-medium flex justify-between items-center">
+                        <span>{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="hover:bg-black hover:text-white px-2">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main content -->
+    <main class="lg:w-10/12 mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t-2 border-black bg-white mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-sm font-mono">
+                <div class="flex items-center gap-2">
+                    <span>© 2025 PocketBase Manager</span>
+                    <span class="hidden md:inline">•</span>
+                    <span class="text-xs px-2 py-1 border border-black">MIT License</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span>Made by</span>
+                    <a href="https://github.com/ssakone" target="_blank" rel="noopener noreferrer" 
+                       class="font-bold hover:bg-black hover:text-white px-2 py-1 border border-black transition-colors">
+                        <i class="fab fa-github mr-1"></i>
+                        Abdramane SAKONE
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>
