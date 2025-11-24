@@ -128,8 +128,7 @@
                 
                 <div class="mt-2">
                      <button onclick="deleteInstance({{ instance.id }})" 
-                            class="btn btn-danger text-xs w-full {% if instance.pm2_status != 'stopped' %}opacity-50 cursor-not-allowed{% endif %}"
-                            {% if instance.pm2_status != 'stopped' %}disabled{% endif %}>
+                            class="btn btn-danger text-xs w-full">
                         <i class="fas fa-trash mr-1"></i> DELETE
                     </button>
                 </div>

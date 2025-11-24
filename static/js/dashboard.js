@@ -232,8 +232,7 @@ function renderInstanceCard(instance) {
         
         <div class="mt-2">
              <button onclick="deleteInstance(${instance.id})" 
-                    class="btn btn-danger text-xs w-full ${!isStopped ? 'opacity-50 cursor-not-allowed' : ''}"
-                    ${!isStopped ? 'disabled' : ''}>
+                    class="btn btn-danger text-xs w-full">
                 <i class="fas fa-trash mr-1"></i> DELETE
             </button>
         </div>
