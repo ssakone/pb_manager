@@ -21,6 +21,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = f'sqlite:///{BASE_DIR / DATABASE_PATH}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    HOST = os.getenv('HOST', '127.0.0.1')
     PORT = os.getenv('PORT', '5000')
     
     # PocketBase Instances
