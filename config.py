@@ -20,6 +20,8 @@ class Config:
     DATABASE_PATH = os.getenv('DATABASE_PATH', 'storage/instances.db')
     SQLALCHEMY_DATABASE_URI = f'sqlite:///{BASE_DIR / DATABASE_PATH}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    PORT = os.getenv('PORT', '5000')
     
     # PocketBase Instances
     INSTANCES_DIR = Path(os.path.expanduser(os.getenv('INSTANCES_DIR', '~/pocketbase-instances')))
