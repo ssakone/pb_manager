@@ -11,6 +11,7 @@ class Config:
     # Flask
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    APP_VERSION = os.getenv('APP_VERSION', 'v0.1')
     
     # Database
     BASE_DIR = Path(__file__).parent

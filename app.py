@@ -22,6 +22,10 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
     
+    @app.context_processor
+    def inject_app_version():
+        return {'APP_VERSION': Config.APP_VERSION}
+    
     @login_manager.user_loader
     def load_user(user_id):
         return AuthService.get_user_by_id(user_id)
